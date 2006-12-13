@@ -41,6 +41,6 @@ if (!isSet($_GET['q'])) { $q = "All \"New York\" winter"; } else {$q = $_GET['q'
 ?>
 <br/>
 <br/>
-<small>This is using SEHL-1.8.3</small>
+<small>This is using SEHL</small>
 </body>
 </html>

@@ -1,5 +1,4 @@
 Search Engine Highlight Readme
-sehl.zip
 
 brian suda
 suda.co.uk
@@ -13,5 +12,4 @@ This file maybe updated with faster more efficient regular expressions or other 
 http://suda.co.uk/project/SEHL/
 
 COPYRIGHT
-This is distributed under the GNU lisence. For more information please visit: 
-http://www.gnu.org/copyleft/gpl.html
+This is distributed under the GNU Lesser General Public License. For more information please visit: http://www.gnu.org/licenses/lgpl.html
