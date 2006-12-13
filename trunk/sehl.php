@@ -2,21 +2,20 @@
 /* ----------------------------------
 
 SEARCH ENGINE HIGHLIGHING
-version 1.8.3
-2006-07-25
 
 brian suda
 http://suda.co.uk
 
 matt riggott
-http://www.riggs.me.uk
+http://www.flother.com
 
 NOTES:
 The most upto date version of the project can be found at the following:
 http://suda.co.uk/projects/SEHL/
 
 COPYRIGHT:
-http://www.gnu.org/copyleft/gpl.html
+GNU Lesser General Public License:
+http://www.gnu.org/licenses/lgpl.html
 
 WARNING:
 This file MUST be saved as UTF-8

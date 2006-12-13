@@ -305,8 +305,8 @@
     engine highlight code</a> on Brian’s site. There are probably a million and one different
     ways that the code could be improved (we’ve already started on a fully
     object-oriented version ourselves), and any comments are welcome. We’ve
-    released this code under the <acronym title="GNU’s Not Unix">GNU</acronym>
-    <a href="http://www.gnu.org/copyleft/gpl.html">General Public Licence</a>,
+    released this code under the <a href="http://www.gnu.org/licenses/lgpl.html"><abbr title="GNU’s Not Unix">GNU</abbr>
+    Lesser General Public Licence</a>,
     so you’re welcome to port the code to other scripting languages and do with
     it what you will. Enjoy!
    </p>
