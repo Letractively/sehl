@@ -59,7 +59,7 @@ All in all, 100,000 workers went on strike joined by countless unemployed and ho
 <p>
 html entity:  resum&eacute;<br />
 UTF-8: resumÃ©<br />
-ISO-8859-1: resumé<br />
+ISO-8859-1: resumï¿½<br />
 HEX: resum&#xE9; (%E9)<br />
 Decimal: resum&#233; (#233)<br />
 </p>
