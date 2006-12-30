@@ -12,6 +12,7 @@ http://www.flother.com
 NOTES:
 The most upto date version of the project can be found at the following:
 http://suda.co.uk/projects/SEHL/
+http://sehl.googlecode.com/
 
 COPYRIGHT:
 GNU Lesser General Public License:
@@ -32,27 +33,96 @@ function sehl($full_html){
 	$url_array = parse_url($ref);
 
 	/* If there is no query string, exit */
-	if (!isSet($url_array['query'])) {return $full_html;}
+	if (!isset($url_array['query'])) {return $full_html;}
 
 	/* This is so we can sperate the body from html if ob_start is before body */
-	/* Prevents highlighting words in the head tags */
+	/* Prevents highlighting words outside the body element */
 	$pieces = explode('<body',$full_html,2);
 
-	if (!isSet($pieces[1])) {
+	if (!isset($pieces[1])) {
 		$before_body = '';
 		$full_body = $full_html;
 	} else {
 		/* This needs to be added AFTER the body tag */
 		$bbody = explode('>',$pieces[1],2);
 		$pieces[0] .= '<body'.$bbody[0].">\n\t\t";
-		if (isSet($bbody[1])){$full_body = $bbody[1];}
+		if (isset($bbody[1])){$full_body = $bbody[1];}
 		$before_body = $pieces[0];
 	}
 
 	/* initialise variables */
 	$colour      = 0; /* zero-out variables */
-	$max_colours = 5; /* Number of highlight colours in the css */
 	$gCounter    = 0;
+	$hl_array     = array();
+
+	/* fetch an array of the terms to highlight */	
+	$hl_array = getHighlightTerms($url_array['query']);
+		
+	/* The hl_array[] has all the terms of user interest. This is where you can pass this information to other services. We selected do_highlight(), you could easily call out to an ATOMZ search, internal search or other services here.  */
+
+	/* go through and highlight the search terms in different colours */
+	$hl_text = ''; /* zero-out variable */
+	$prev_colour = '-1';
+	global $gCounter;
+	$prev_gCounter = 0;
+	$prev_phrase = '';
+	$show=0;
+	$other_occurances = 0;
+
+	foreach($hl_array as $hl_phrase=>$hl_colour){
+		$full_body = do_highlight($full_body, $hl_phrase, $hl_colour);
+		
+			
+		/* Add terms to optional display box */
+		$occurance = ($gCounter-$prev_gCounter);
+		
+		if ($prev_colour != $hl_colour){
+			$show++;
+			
+			if ($prev_phrase != ''){
+				$hl_text .= '<span class="hl'.$prev_colour.'" title="&#39;'.$prev_phrase.'&#39; occurs '.$prev_occurance.' '.pluralize('time',$prev_occurance).' on this page';
+				if ($other_occurances > 0){
+					$hl_text .= ' with '.$other_occurances.' other possible '.pluralize('derivitive',$prev_occurance);
+				}
+				$hl_text .= '.">'.$prev_phrase.'</span> ';
+			}
+			
+			$prev_phrase = $hl_phrase;
+			$prev_colour = $hl_colour;
+			$prev_occurance = $occurance;
+			$prev_gCounter = $gCounter;
+			$other_occurances = 0;
+			$prev_colour = $hl_colour;
+		} else {
+			if ($prev_gCounter != $gCounter) { 
+				$other_occurances += $occurance;
+				$prev_gCounter = $gCounter;
+			}
+		}
+		
+	}
+	/* get the last item for the display box */
+	$hl_text .= '<span class="hl'.$prev_colour.'" title="&#39;'.$prev_phrase.'&#39; occurs '.$prev_occurance.' '.pluralize('time',$prev_occurance).' on this page';
+	if ($other_occurances > 0){
+		$hl_text .= ' with '.$other_occurances.' other '.pluralize('derivitive',$prev_occurance);
+	}
+	$hl_text .= '.">'.$prev_phrase.'</span> ';
+		
+			
+	/* OPTIONAL: prepend information to the page for the user*/
+	if ($show){
+		$box = '<div class="center"><div id="sehlalertbox"><h2>Why ';
+		if ($show<2){$box.='is';}else{$box.='are';}
+		$box .= ' '.$hl_text.' highlighted?</h2>The <a href="http://suda.co.uk/projects/SEHL/" title="Search Engine Highlight Function">Search Engine Highlight Feature</a> tags your search terms for easy identification.</div></div>'."\n";
+		$full_body = $box.$full_body;
+	}
+	
+	/* return the page to the client */
+	return $before_body.$full_body;
+}
+
+function getHighlightTerms($query_string){
+	$max_colours = 5; /* Number of highlight colours in the css */
 	
 	/* This is where you can add support for more search engines */
 	$acceptedQueryKeys = array(
@@ -87,75 +157,21 @@ function sehl($full_html){
 	ampersands.  The W3C recommend using a semi-colon to avoid problems with
 	HTML entities, and so some user-agents may use these.  However, all said
 	and done it's a fairly safe assumption. */
-	$query_array = explode('&',$url_array['query']);
-
+	$query_array = explode('&',$query_string);
+	
 	/* get the search terms from the query string */
 	foreach($query_array as $var){
 		$var_array = explode('=',$var);
 
 		if (in_array($var_array[0], $acceptedQueryKeys)){
-		
 			/* TODO: strip-out advanced search paramters like (+/-) operators */
 			/* parse the search terms for quoted values */
 			$hl_array = parse_quote_string($var_array[1]);
 			$hl_array = expand_list($hl_array,$max_colours);
-			$hl_text = ''; /* zero-out variable */
-			$prev_colour = '-1';
-			global $gCounter;
-			$prev_gCounter = 0;
-			$prev_phrase = '';
-			$show=0;
-			
-			/* The hl_array[] has all the terms of user interest. This is where you can pass this information to other services. We selected do_highlight(), you could easily call out to an ATOMZ search, internal search or other services here.  */
-
-
-			/* go through and highlight the search terms in different colours */
-			foreach($hl_array as $hl_phrase){
-					$full_body = do_highlight($full_body, $hl_phrase['phrase'], $hl_phrase['colour']);
-			
-					/* Add terms to optional display box */
-					$occurance = ($gCounter-$prev_gCounter);
-					if ($prev_colour != $hl_phrase['colour']){
-//						if (($occurance != 0) && ($other_occurances == 0)) {
-							$show++;
-							if ($prev_phrase != ''){
-								$hl_text .= '<span class="hl'.$prev_colour.'" title="&#39;'.$prev_phrase.'&#39; occurs '.$prev_occurance.' '.pluralize('time',$prev_occurance).' on this page';
-								if ($other_occurances > 0){
-									$hl_text .= ' with '.$other_occurances.' other possible '.pluralize('derivitive',$prev_occurance);
-								}
-								$hl_text .= '.">'.$prev_phrase.'</span> ';
-							}
-							$prev_phrase = $hl_phrase['phrase'];
-							$prev_colour = $hl_phrase['colour'];
-							$prev_occurance = $occurance;
-							$prev_gCounter = $gCounter;
-							$other_occurances = 0;
-//						}
-						$prev_colour = $hl_phrase['colour'];
-					} else {
-						if ($occurance != $prev_occurance) { $other_occurances += $occurance; }
-					}
-			}
-			
-			/* get the last item for the display box */
-			$hl_text .= '<span class="hl'.$prev_colour.'" title="&#39;'.$prev_phrase.'&#39; occurs '.$prev_occurance.' '.pluralize('time',$prev_occurance).' on this page';
-			if ($other_occurances > 0){
-				$hl_text .= ' with '.$other_occurances.' other '.pluralize('derivitive',$prev_occurance);
-			}
-			$hl_text .= '.">'.$prev_phrase.'</span> ';
-
-			/* OPTIONAL: prepend information to the page for the user*/
-			if ($show){
-				$box = '<div class="center"><div id="sehlalertbox"><h2>Why ';
-				if ($show<2){$box.='is';}else{$box.='are';}
-				$box .= ' '.$hl_text.' highlighted?</h2>The <a href="http://suda.co.uk/projects/SEHL/" title="Search Engine Highlight Function">Search Engine Highlight Feature</a> tags your search terms for easy identification.</div></div>'."\n";
-				$full_body = $box.$full_body;
-			}
 		}
-	}
-
-	/* return the page to the client */
-	return $before_body.$full_body;
+	}	
+		
+	return $hl_array;
 }
 
 function do_highlight($full_body, $q, $colour){
@@ -200,8 +216,6 @@ function do_highlight($full_body, $q, $colour){
 function parse_quote_string($query_string){
 	/* urldecode the string and setup variables */
 	$query_string = urldecode($query_string);
-	//$query_string = htmlspecialchars($query_string, ENT_NOQUOTES);
-	//$query_string = str_replace('/','',$query_string);
 	$quote_flag = false;
 	$word = '';
 	$terms = array();
@@ -225,9 +239,9 @@ function parse_quote_string($query_string){
 }
 
 function expand_list($hl_array,$max_colours){
-	$colour = '0';
+	$colour = 0;
 	$hl_array_expanded = array();
-	foreach ($hl_array as $hl){
+	foreach ($hl_array as $hl){		
 		$hl_ascii = '';
 		/* Attempt to get the correct encoding */
 		/* If you use other encodings, then they should be listed here */
@@ -241,32 +255,32 @@ function expand_list($hl_array,$max_colours){
 		}
 
 		if ($hl != '') {
-			array_push($hl_array_expanded,array('phrase' => $hl, 'colour' => $colour%$max_colours));
+			/* STEP 1: just push the term onto the array */
+			$hl_array_expanded = array_merge($hl_array_expanded,array($hl => $colour%$max_colours));
 
 			/* STEP 2: Look for Common HTML entities */
 			if($hl_ascii!=htmlentities($hl_ascii)){
-				array_push($hl_array_expanded,array('phrase' => htmlentities($hl_ascii), 'colour' => $colour%$max_colours));
+				$hl_array_expanded = array_merge($hl_array_expanded,array(htmlentities($hl_ascii) => $colour%$max_colours));
 			}
 
 			/* STEP 3: downcast letters */
 			if($hl!=removeaccents($hl)){
-				array_push($hl_array_expanded,array('phrase' => removeaccents($hl), 'colour' => $colour%$max_colours));
+				$hl_array_expanded = array_merge($hl_array_expanded,array(removeaccents($hl) => $colour%$max_colours));
 			}
 			
 			/* STEP 4: HEX encode */
 			if($hl_ascii!=convertHEX($hl_ascii)){
-				array_push($hl_array_expanded,array('phrase' => convertHEX($hl_ascii), 'colour' => $colour%$max_colours));
+				$hl_array_expanded = array_merge($hl_array_expanded,array(convertHEX($hl_ascii) => $colour%$max_colours));
 			}
 			
 			/* STEP 5: DEC encode */
 			if($hl_ascii!=convertDEC($hl_ascii)){
-				array_push($hl_array_expanded,array('phrase' => convertDEC($hl_ascii), 'colour' => $colour%$max_colours));
+				$hl_array_expanded = array_merge($hl_array_expanded,array(convertDEC($hl_ascii) => $colour%$max_colours));
 			}
 
 			/* STEP 6: Pluralize */
-			
 			if($hl!=pluralize($hl)){
-				array_push($hl_array_expanded,array('phrase' => pluralize($hl), 'colour' => $colour%$max_colours));
+				$hl_array_expanded = array_merge($hl_array_expanded,array(pluralize($hl) => $colour%$max_colours));
 			}
 			
 			/* STEP 7: Singluarlize */
