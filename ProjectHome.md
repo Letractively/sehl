@@ -1,0 +1,1 @@
+This function will extend a search engine's ability to search your domain by taking the terms the user entered and highlighting them within your own domain. This is achieved on the server-side without the users knowledge. The function takes the referrer from the search engine and parses out the query string, searches through your post-processed HTML code, and tags matching terms.
